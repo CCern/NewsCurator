@@ -1,0 +1,35 @@
+name: Send News Briefing
+
+on:
+  schedule:
+    # Cada 2 días a las 21:00 UTC = 18:00 Argentina (UTC-3)
+    # Días pares: lunes, miércoles, viernes, domingo
+    - cron: '0 21 * * 1,3,5,0'
+  workflow_dispatch:  # permite ejecutarlo manualmente desde GitHub
+
+jobs:
+  send-briefing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run news curator
+        env:
+          NEWS_API_KEY: ${{ secrets.NEWS_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RECIPIENT_EMAIL: ${{ secrets.RECIPIENT_EMAIL }}
+          FEEDBACK_ENDPOINT: ${{ secrets.FEEDBACK_ENDPOINT }}
+        run: python main.py
