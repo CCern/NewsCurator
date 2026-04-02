@@ -25,9 +25,11 @@ CATEGORY_COLORS = {
 }
 
 
-def build_email_html(geopolitics_intro: str, articles: list[dict], feedback_endpoint: str) -> str:
+def build_email_html(geopolitics_intro: str, articles: list[dict],
+                     feedback_base_url: str) -> str:
     """Construye el HTML del email."""
     date_str = datetime.now().strftime("%A %d de %B, %Y")
+    today = datetime.now().strftime("%Y-%m-%d")
     articles_html = ""
 
     for i, article in enumerate(articles, 1):
@@ -46,9 +48,13 @@ def build_email_html(geopolitics_intro: str, articles: list[dict], feedback_endp
         read_url = f"https://archive.ph/newest/{url}" if is_paywalled else url
         paywall_badge = ' <span style="font-size:10px;background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;">via archive</span>' if is_paywalled else ""
 
-        # URLs para feedback (placeholder hasta tener el endpoint real)
-        like_url = f"{feedback_endpoint}?action=like&id={i}&title={_url_encode(title)}"
-        dislike_url = f"{feedback_endpoint}?action=dislike&id={i}&title={_url_encode(title)}"
+        # URLs de feedback con metadata completa para alimentar el modelo
+        like_url = (f"{feedback_base_url}?action=like&id={i}"
+                    f"&title={_url_encode(title)}&source={_url_encode(source)}"
+                    f"&category={_url_encode(cat)}&date={today}")
+        dislike_url = (f"{feedback_base_url}?action=dislike&id={i}"
+                       f"&title={_url_encode(title)}&source={_url_encode(source)}"
+                       f"&category={_url_encode(cat)}&date={today}")
 
         articles_html += f"""
         <div style="background:#ffffff;border-radius:12px;padding:24px;margin-bottom:20px;
@@ -124,10 +130,26 @@ def build_email_html(geopolitics_intro: str, articles: list[dict], feedback_endp
         </div>
         {articles_html}
 
+        <!-- Feedback cualitativo -->
+        <div style="background:#f8fafc;border-radius:12px;padding:20px 24px;margin-bottom:20px;
+                    border:1px solid #e2e8f0;text-align:center;">
+            <p style="margin:0 0 6px 0;color:#374151;font-size:14px;font-weight:600;">
+                ¿Algo que mejorar en esta edición?
+            </p>
+            <p style="margin:0 0 14px 0;color:#6b7280;font-size:13px;">
+                Tu feedback cualitativo se usa directamente para ajustar qué y cómo te curado.
+            </p>
+            <a href="{feedback_base_url}" target="_blank" rel="noopener"
+               style="background:#1e1b4b;color:white;padding:10px 22px;border-radius:8px;
+                      text-decoration:none;font-size:13px;font-weight:600;">
+                Escribir feedback →
+            </a>
+        </div>
+
         <!-- Footer -->
         <div style="text-align:center;padding:20px;color:#9ca3af;font-size:12px;">
             <p style="margin:0;">Tu asistente de noticias personal · Curado por Claude</p>
-            <p style="margin:4px 0 0;">Los 👍 y 👎 ayudan a mejorar la selección futura</p>
+            <p style="margin:4px 0 0;">Los 👍 👎 y tu feedback escrito mejoran la selección futura</p>
         </div>
 
     </div>

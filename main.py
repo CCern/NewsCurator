@@ -20,7 +20,7 @@ from fetcher import fetch_rss_feeds, fetch_newsapi, try_fetch_full_content
 from curator import score_articles, select_top_articles, generate_summaries, generate_geopolitics_intro
 from emailer import build_email_html, send_email, save_html_preview
 
-FEEDBACK_ENDPOINT = os.getenv("FEEDBACK_ENDPOINT", "https://placeholder.com/feedback")
+FEEDBACK_BASE_URL = os.getenv("FEEDBACK_BASE_URL", "")
 
 
 def main(preview_only: bool = False, dry_run: bool = False):
@@ -84,7 +84,7 @@ def main(preview_only: bool = False, dry_run: bool = False):
 
     # 5. Generar y enviar email
     print("\n[5/5] Generando email...")
-    html = build_email_html(geopolitics_intro, top_articles, FEEDBACK_ENDPOINT)
+    html = build_email_html(geopolitics_intro, top_articles, FEEDBACK_BASE_URL)
 
     # Siempre guardar preview local
     save_html_preview(html)

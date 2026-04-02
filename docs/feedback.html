@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tu Brief Curado — Feedback</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f3f4f6;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 40px 36px;
+      max-width: 480px;
+      width: 100%;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      text-align: center;
+    }
+    .logo { font-size: 32px; margin-bottom: 12px; }
+    .brand {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #6b7280;
+      margin-bottom: 28px;
+    }
+    .vote-icon { font-size: 56px; margin-bottom: 16px; }
+    h1 { font-size: 20px; font-weight: 700; color: #111827; margin-bottom: 8px; }
+    .article-title {
+      font-size: 14px;
+      color: #6b7280;
+      margin-bottom: 28px;
+      line-height: 1.5;
+      font-style: italic;
+    }
+    .btn {
+      display: inline-block;
+      padding: 12px 28px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      text-decoration: none;
+      transition: opacity 0.15s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-primary { background: #1e1b4b; color: white; width: 100%; }
+    .btn-like { background: #f0fdf4; color: #16a34a; border: 1.5px solid #bbf7d0; }
+    .btn-dislike { background: #fef2f2; color: #dc2626; border: 1.5px solid #fecaca; }
+    textarea {
+      width: 100%;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 14px;
+      font-size: 14px;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 120px;
+      color: #374151;
+      line-height: 1.6;
+      margin-bottom: 16px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    textarea:focus { border-color: #6366f1; }
+    .hint { font-size: 12px; color: #9ca3af; margin-bottom: 20px; line-height: 1.5; }
+    .success { color: #16a34a; font-size: 16px; font-weight: 600; margin-top: 12px; }
+    .error-msg { color: #dc2626; font-size: 13px; margin-top: 12px; }
+    .loading { color: #6b7280; font-size: 14px; margin-top: 12px; }
+    #status { min-height: 24px; }
+  </style>
+</head>
+<body>
+<div class="card" id="app">
+  <div class="logo">📡</div>
+  <div class="brand">Tu Brief Curado</div>
+  <div id="content">Cargando...</div>
+</div>
+
+<script>
+  // ─── CONFIGURACIÓN ───────────────────────────────────────────────────────────
+  const GITHUB_TOKEN  = 'REEMPLAZAR_CON_TU_PAT';  // Fine-grained: Contents R+W en news-curator
+  const REPO_OWNER    = 'ccernadas';
+  const REPO_NAME     = 'news-curator';
+  const FILE_PATH     = 'feedback_history.json';
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  const API_URL = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`;
+  const params  = new URLSearchParams(window.location.search);
+  const action  = params.get('action');   // 'like' | 'dislike' | null
+  const title   = decodeURIComponent(params.get('title')    || '');
+  const source  = decodeURIComponent(params.get('source')   || '');
+  const category= decodeURIComponent(params.get('category') || '');
+  const date    = params.get('date') || new Date().toISOString().slice(0, 10);
+
+  // Encode Unicode JSON → base64 para la GitHub API
+  function toBase64(str) {
+    return btoa(unescape(encodeURIComponent(str)));
+  }
+
+  async function getFile() {
+    const res = await fetch(API_URL, {
+      headers: {
+        'Authorization': `token ${GITHUB_TOKEN}`,
+        'Accept': 'application/vnd.github.v3+json'
+      }
+    });
+    if (!res.ok) throw new Error(`GitHub API error ${res.status}`);
+    return res.json();
+  }
+
+  async function saveEntry(newEntry, type) {
+    const fileInfo = await getFile();
+    const content  = JSON.parse(decodeURIComponent(escape(atob(fileInfo.content.replace(/\n/g, '')))));
+    content[type].push(newEntry);
+    const updated  = toBase64(JSON.stringify(content, null, 2));
+
+    const res = await fetch(API_URL, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${GITHUB_TOKEN}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/vnd.github.v3+json'
+      },
+      body: JSON.stringify({
+        message: `feedback: ${type} entry — ${date}`,
+        content: updated,
+        sha: fileInfo.sha
+      })
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.message || `Error ${res.status}`);
+    }
+  }
+
+  function setStatus(html) {
+    document.getElementById('status').innerHTML = html;
+  }
+
+  // ─── MODO VOTO ───────────────────────────────────────────────────────────────
+  function renderVote() {
+    const isLike = action === 'like';
+    const icon   = isLike ? '👍' : '👎';
+    const label  = isLike ? 'Marcar como útil' : 'Marcar como no relevante';
+    const btnCls = isLike ? 'btn-like' : 'btn-dislike';
+
+    document.getElementById('content').innerHTML = `
+      <div class="vote-icon">${icon}</div>
+      <h1>${isLike ? '¿Útil?' : '¿No te sirvió?'}</h1>
+      <p class="article-title">${title}${source ? ` · <strong>${source}</strong>` : ''}</p>
+      <button class="${btnCls} btn" id="confirmBtn" onclick="submitVote()">${label}</button>
+      <div id="status"></div>
+    `;
+  }
+
+  async function submitVote() {
+    document.getElementById('confirmBtn').disabled = true;
+    setStatus('<span class="loading">Guardando...</span>');
+    try {
+      await saveEntry({ date, action, title, source, category }, 'votes');
+      setStatus('<span class="success">✓ Guardado. Gracias, esto mejora la próxima edición.</span>');
+      document.getElementById('confirmBtn').style.display = 'none';
+    } catch (e) {
+      setStatus(`<span class="error-msg">Error: ${e.message}</span>`);
+      document.getElementById('confirmBtn').disabled = false;
+    }
+  }
+
+  // ─── MODO FEEDBACK CUALITATIVO ───────────────────────────────────────────────
+  function renderForm() {
+    document.getElementById('content').innerHTML = `
+      <h1>¿Algo que mejorar?</h1>
+      <p class="article-title" style="margin-bottom:20px;margin-top:8px;">
+        Tu feedback se usa directamente para ajustar qué artículos se curan en la próxima edición.
+      </p>
+      <textarea id="feedbackText" placeholder="Ej: Me gustan más los análisis de largo plazo sobre AI. Menos ruido de altcoins. Me faltó algo sobre economía latinoamericana..."></textarea>
+      <p class="hint">Podés escribir lo que quieras: temas que extrañás, fuentes que querés ver más, calidad de los resúmenes, etc.</p>
+      <button class="btn btn-primary" id="submitBtn" onclick="submitForm()">Enviar feedback →</button>
+      <div id="status"></div>
+    `;
+  }
+
+  async function submitForm() {
+    const text = document.getElementById('feedbackText').value.trim();
+    if (!text) {
+      setStatus('<span class="error-msg">Escribí algo antes de enviar.</span>');
+      return;
+    }
+    document.getElementById('submitBtn').disabled = true;
+    setStatus('<span class="loading">Guardando...</span>');
+    try {
+      await saveEntry({ date, text }, 'qualitative');
+      setStatus('<span class="success">✓ Recibido. Ya está siendo procesado para la próxima edición.</span>');
+      document.getElementById('feedbackText').style.display = 'none';
+      document.getElementById('submitBtn').style.display = 'none';
+    } catch (e) {
+      setStatus(`<span class="error-msg">Error: ${e.message}</span>`);
+      document.getElementById('submitBtn').disabled = false;
+    }
+  }
+
+  // ─── INIT ────────────────────────────────────────────────────────────────────
+  if (action === 'like' || action === 'dislike') {
+    renderVote();
+  } else {
+    renderForm();
+  }
+</script>
+</body>
+</html>

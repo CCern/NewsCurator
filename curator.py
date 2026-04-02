@@ -5,6 +5,7 @@ import os
 import json
 import anthropic
 from config import TOPICS, SELECTION
+from feedback_store import load_feedback, build_feedback_context
 
 client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
@@ -87,12 +88,19 @@ Respondé SOLO con el párrafo, sin títulos ni formato especial.
 def score_articles(articles: list[dict]) -> list[dict]:
     """Puntúa cada artículo por relevancia usando Claude."""
     print(f"\nScoring {len(articles)} artículos con Claude...")
+
+    feedback = load_feedback()
+    feedback_context = build_feedback_context(feedback)
+    if feedback_context:
+        print("  [✓] Feedback histórico cargado — ajustando scoring")
+    effective_profile = USER_PROFILE + feedback_context
+
     scored = []
 
     for i, article in enumerate(articles):
         try:
             prompt = SCORE_PROMPT.format(
-                user_profile=USER_PROFILE,
+                user_profile=effective_profile,
                 title=article["title"],
                 source=article["source"],
                 summary=article["summary"][:500],
