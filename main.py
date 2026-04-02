@@ -20,7 +20,8 @@ from fetcher import fetch_rss_feeds, fetch_newsapi, try_fetch_full_content
 from curator import score_articles, select_top_articles, generate_summaries, generate_geopolitics_intro
 from emailer import build_email_html, send_email, save_html_preview
 
-FEEDBACK_BASE_URL = os.getenv("FEEDBACK_BASE_URL", "")
+FEEDBACK_BASE_URL = os.getenv("FEEDBACK_BASE_URL", "https://ccern.github.io/NewsCurator/feedback.html")
+FEEDBACK_PAT = os.getenv("FEEDBACK_PAT", "")
 
 
 def main(preview_only: bool = False, dry_run: bool = False):
@@ -84,7 +85,7 @@ def main(preview_only: bool = False, dry_run: bool = False):
 
     # 5. Generar y enviar email
     print("\n[5/5] Generando email...")
-    html = build_email_html(geopolitics_intro, top_articles, FEEDBACK_BASE_URL)
+    html = build_email_html(geopolitics_intro, top_articles, FEEDBACK_BASE_URL, FEEDBACK_PAT)
 
     # Siempre guardar preview local
     save_html_preview(html)

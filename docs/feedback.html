@@ -89,14 +89,14 @@
 
 <script>
   // ─── CONFIGURACIÓN ───────────────────────────────────────────────────────────
-  const GITHUB_TOKEN  = 'REEMPLAZAR_CON_TU_PAT';  // Fine-grained: Contents R+W en news-curator
-  const REPO_OWNER    = 'CCern';
-  const REPO_NAME     = 'NewsCurator';
-  const FILE_PATH     = 'feedback_history.json';
+  const REPO_OWNER = 'CCern';
+  const REPO_NAME  = 'NewsCurator';
+  const FILE_PATH  = 'feedback_history.json';
   // ─────────────────────────────────────────────────────────────────────────────
 
   const API_URL = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`;
   const params  = new URLSearchParams(window.location.search);
+  const GITHUB_TOKEN = params.get('token') || '';
   const action  = params.get('action');   // 'like' | 'dislike' | null
   const title   = decodeURIComponent(params.get('title')    || '');
   const source  = decodeURIComponent(params.get('source')   || '');
@@ -211,7 +211,12 @@
   }
 
   // ─── INIT ────────────────────────────────────────────────────────────────────
-  if (action === 'like' || action === 'dislike') {
+  if (!GITHUB_TOKEN) {
+    document.getElementById('content').innerHTML = `
+      <h1 style="color:#dc2626;">Acceso inválido</h1>
+      <p class="article-title">Usá los links del email para dejar feedback.</p>
+    `;
+  } else if (action === 'like' || action === 'dislike') {
     renderVote();
   } else {
     renderForm();

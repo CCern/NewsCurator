@@ -26,7 +26,7 @@ CATEGORY_COLORS = {
 
 
 def build_email_html(geopolitics_intro: str, articles: list[dict],
-                     feedback_base_url: str) -> str:
+                     feedback_base_url: str, feedback_pat: str = "") -> str:
     """Construye el HTML del email."""
     date_str = datetime.now().strftime("%A %d de %B, %Y")
     today = datetime.now().strftime("%Y-%m-%d")
@@ -48,13 +48,14 @@ def build_email_html(geopolitics_intro: str, articles: list[dict],
         read_url = f"https://archive.ph/newest/{url}" if is_paywalled else url
         paywall_badge = ' <span style="font-size:10px;background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;">via archive</span>' if is_paywalled else ""
 
-        # URLs de feedback con metadata completa para alimentar el modelo
+        # URLs de feedback con metadata completa + token para autenticación
+        token_param = f"&token={feedback_pat}" if feedback_pat else ""
         like_url = (f"{feedback_base_url}?action=like&id={i}"
                     f"&title={_url_encode(title)}&source={_url_encode(source)}"
-                    f"&category={_url_encode(cat)}&date={today}")
+                    f"&category={_url_encode(cat)}&date={today}{token_param}")
         dislike_url = (f"{feedback_base_url}?action=dislike&id={i}"
                        f"&title={_url_encode(title)}&source={_url_encode(source)}"
-                       f"&category={_url_encode(cat)}&date={today}")
+                       f"&category={_url_encode(cat)}&date={today}{token_param}")
 
         articles_html += f"""
         <div style="background:#ffffff;border-radius:12px;padding:24px;margin-bottom:20px;
@@ -139,7 +140,7 @@ def build_email_html(geopolitics_intro: str, articles: list[dict],
             <p style="margin:0 0 14px 0;color:#6b7280;font-size:13px;">
                 Tu feedback cualitativo se usa directamente para ajustar qué y cómo te curado.
             </p>
-            <a href="{feedback_base_url}" target="_blank" rel="noopener"
+            <a href="{feedback_base_url}{'?token=' + feedback_pat if feedback_pat else ''}" target="_blank" rel="noopener"
                style="background:#1e1b4b;color:white;padding:10px 22px;border-radius:8px;
                       text-decoration:none;font-size:13px;font-weight:600;">
                 Escribir feedback →
