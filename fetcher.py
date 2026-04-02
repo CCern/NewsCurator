@@ -102,7 +102,7 @@ def try_fetch_full_content(url: str) -> str:
     Intenta obtener el contenido completo del artículo.
     Para medios con paywall (FT, Economist), prueba archive.ph primero.
     """
-    PAYWALLED_DOMAINS = ["ft.com", "economist.com", "wsj.com", "bloomberg.com", "nytimes.com"]
+    PAYWALLED_DOMAINS = ["ft.com", "economist.com", "wsj.com", "bloomberg.com", "nytimes.com", "theverge.com"]
     is_paywalled = any(domain in url for domain in PAYWALLED_DOMAINS)
 
     if is_paywalled:
@@ -116,7 +116,7 @@ def try_fetch_full_content(url: str) -> str:
 def _fetch_via_archive(url: str) -> str:
     """Intenta leer el artículo via archive.ph."""
     try:
-        archive_url = f"https://archive.ph/{url}"
+        archive_url = f"https://archive.ph/newest/{url}"
         resp = requests.get(archive_url, headers=HEADERS, timeout=15)
         if resp.status_code == 200:
             soup = BeautifulSoup(resp.text, "lxml")
