@@ -1,4 +1,12 @@
 {
-  "votes": [],
+  "votes": [
+    {
+      "date": "2026-04-02",
+      "action": "like",
+      "title": "Watch Out Bitcoin: Cryptography-Breaking Quantum Computers May Be Closer Than Expected, Says Caltech",
+      "source": "Decrypt",
+      "category": "Bitcoin"
+    }
+  ],
   "qualitative": []
 }
