@@ -43,7 +43,7 @@ def build_email_html(geopolitics_intro: str, articles: list[dict],
         score = article.get("score", 0)
 
         # Para medios con paywall, redirigir via archive.ph que cachea el artículo completo
-        PAYWALLED_DOMAINS = ["ft.com", "economist.com", "wsj.com", "bloomberg.com", "nytimes.com", "theverge.com"]
+        PAYWALLED_DOMAINS = ["ft.com", "economist.com", "wsj.com", "bloomberg.com", "nytimes.com", "theverge.com", "wired.com"]
         is_paywalled = any(d in url for d in PAYWALLED_DOMAINS)
         read_url = f"https://archive.ph/newest/{url}" if is_paywalled else url
         paywall_badge = ' <span style="font-size:10px;background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;">via archive</span>' if is_paywalled else ""

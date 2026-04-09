@@ -102,7 +102,7 @@ def try_fetch_full_content(url: str) -> str:
     Intenta obtener el contenido completo del artículo.
     Para medios con paywall (FT, Economist), prueba archive.ph primero.
     """
-    PAYWALLED_DOMAINS = ["ft.com", "economist.com", "wsj.com", "bloomberg.com", "nytimes.com", "theverge.com"]
+    PAYWALLED_DOMAINS = ["ft.com", "economist.com", "wsj.com", "bloomberg.com", "nytimes.com", "theverge.com", "wired.com"]
     is_paywalled = any(domain in url for domain in PAYWALLED_DOMAINS)
 
     if is_paywalled:
@@ -114,13 +114,15 @@ def try_fetch_full_content(url: str) -> str:
 
 
 def _fetch_via_archive(url: str) -> str:
-    """Intenta leer el artículo via archive.ph."""
+    """Intenta leer el artículo via archive.ph (requiere URL con timestamp, no página de espera)."""
+    import re
     try:
         archive_url = f"https://archive.ph/newest/{url}"
-        resp = requests.get(archive_url, headers=HEADERS, timeout=15)
-        if resp.status_code == 200:
+        resp = requests.get(archive_url, headers=HEADERS, timeout=15, allow_redirects=True)
+        # Exige timestamp en la URL final: archive.ph/20241231123456/... → artículo real
+        # Si queda como /newest/ o /wip/ → página de espera, descartar
+        if resp.status_code == 200 and re.search(r"archive\.ph/\d{14}/", resp.url):
             soup = BeautifulSoup(resp.text, "lxml")
-            # Eliminar nav, ads, scripts
             for tag in soup(["script", "style", "nav", "header", "footer", "aside"]):
                 tag.decompose()
             text = soup.get_text(separator=" ", strip=True)
@@ -128,6 +130,7 @@ def _fetch_via_archive(url: str) -> str:
                 return text[:3000]
     except Exception:
         pass
+
     return ""
 
 
