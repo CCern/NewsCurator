@@ -102,7 +102,7 @@ def try_fetch_full_content(url: str) -> str:
     Intenta obtener el contenido completo del artículo.
     Para medios con paywall (FT, Economist), prueba archive.ph primero.
     """
-    PAYWALLED_DOMAINS = ["ft.com", "economist.com", "wsj.com", "bloomberg.com", "nytimes.com", "theverge.com", "wired.com"]
+    PAYWALLED_DOMAINS = ["ft.com", "economist.com", "wsj.com", "bloomberg.com", "nytimes.com", "theverge.com", "wired.com", "technologyreview.com"]
     is_paywalled = any(domain in url for domain in PAYWALLED_DOMAINS)
 
     if is_paywalled:

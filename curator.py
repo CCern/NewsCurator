@@ -26,15 +26,9 @@ PERFIL DE SELECCIÓN:
 - EXCLUIR: clickbait, sensacionalismo, noticias sin sustancia, artículos de < 400 palabras
 """
 
-SCORE_PROMPT = """
-Eres un curador de noticias de élite. Tu tarea es evaluar artículos para un ejecutivo senior.
+SCORE_SYSTEM = """Eres un curador de noticias de élite. Tu tarea es evaluar artículos para un ejecutivo senior.
 
 {user_profile}
-
-Artículo a evaluar:
-- Título: {title}
-- Fuente: {source}
-- Resumen/snippet: {summary}
 
 Respondé SOLO con un JSON válido con este formato exacto:
 {{
@@ -47,8 +41,12 @@ Criterios de scoring:
 - 9-10: Análisis profundo, fuente de élite, muy relevante para el perfil
 - 7-8: Relevante y bien fundamentado
 - 5-6: Interesante pero no urgente
-- 0-4: Trivial, clickbait, o no alineado con el perfil
-"""
+- 0-4: Trivial, clickbait, o no alineado con el perfil"""
+
+SCORE_USER = """Artículo a evaluar:
+- Título: {title}
+- Fuente: {source}
+- Resumen/snippet: {summary}"""
 
 SUMMARY_PROMPT = """
 Eres el asistente personal de noticias de Carlos, ejecutivo senior en fintech/insurtech.
@@ -95,21 +93,31 @@ def score_articles(articles: list[dict]) -> list[dict]:
         print("  [✓] Feedback histórico cargado — ajustando scoring")
     effective_profile = USER_PROFILE + feedback_context
 
+    # Construir system_text UNA vez para toda la corrida (mismo para los ~150 artículos).
+    # cache_control lo cachea si supera 1024 tokens; si no, es no-op seguro.
+    system_text = SCORE_SYSTEM.format(user_profile=effective_profile)
     scored = []
+    cache_hits = 0
 
     for i, article in enumerate(articles):
         try:
-            prompt = SCORE_PROMPT.format(
-                user_profile=effective_profile,
+            user_text = SCORE_USER.format(
                 title=article["title"],
                 source=article["source"],
                 summary=article["summary"][:500],
             )
             response = client.messages.create(
-                model="claude-haiku-4-5-20251001",  # Haiku para scoring masivo (más rápido y barato)
+                model="claude-3-haiku-20240307",
                 max_tokens=200,
-                messages=[{"role": "user", "content": prompt}],
+                system=[{
+                    "type": "text",
+                    "text": system_text,
+                    "cache_control": {"type": "ephemeral"},
+                }],
+                messages=[{"role": "user", "content": user_text}],
             )
+            if getattr(response.usage, "cache_read_input_tokens", 0) > 0:
+                cache_hits += 1
             raw = response.content[0].text.strip()
             # Limpiar markdown si Claude envuelve en ```json ... ```
             if raw.startswith("```"):
@@ -131,6 +139,8 @@ def score_articles(articles: list[dict]) -> list[dict]:
             article["category"] = "Descartado"
             scored.append(article)
 
+    if cache_hits > 0:
+        print(f"  [cache] {cache_hits}/{len(articles)} hits — prefix cacheado correctamente")
     return scored
 
 
