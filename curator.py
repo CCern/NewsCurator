@@ -46,10 +46,18 @@ Criterios de scoring:
 - 5-6: Interesante pero no urgente
 - 0-4: Trivial, clickbait, o no alineado con el perfil"""
 
-SCORE_USER = """Artículo a evaluar:
-- Título: {title}
-- Fuente: {source}
-- Resumen/snippet: {summary}"""
+BATCH_SIZE = 25
+
+SCORE_USER_BULK = """Evaluá los siguientes {n} artículos para el perfil del usuario.
+Respondé SOLO con un JSON array válido (sin markdown), un objeto por artículo en el mismo orden:
+
+{articles_list}
+
+Formato requerido:
+[
+  {{"id": 0, "score": <0-10>, "category": "<AI|Negocios|Historia|Ciencia|Bitcoin|Geopolítica|Descartado>", "reason": "<max 15 palabras>"}},
+  ...
+]"""
 
 SUMMARY_PROMPT = """
 Eres el asistente personal de noticias de Carlos, ejecutivo senior en fintech/insurtech.
@@ -87,31 +95,31 @@ Respondé SOLO con el párrafo, sin títulos ni formato especial.
 
 
 def score_articles(articles: list[dict]) -> list[dict]:
-    """Puntúa cada artículo por relevancia usando Claude."""
-    print(f"\nScoring {len(articles)} artículos con Claude...")
+    """Puntúa artículos por relevancia usando Claude en lotes para reducir costo."""
+    print(f"\nScoring {len(articles)} artículos con Claude (lotes de {BATCH_SIZE})...")
 
     feedback = load_feedback()
     feedback_context = build_feedback_context(feedback)
     if feedback_context:
         print("  [✓] Feedback histórico cargado — ajustando scoring")
     effective_profile = USER_PROFILE + feedback_context
-
-    # Construir system_text UNA vez para toda la corrida (mismo para los ~150 artículos).
-    # cache_control lo cachea si supera 1024 tokens; si no, es no-op seguro.
     system_text = SCORE_SYSTEM.format(user_profile=effective_profile)
+
     scored = []
     cache_hits = 0
+    batches = [articles[i:i + BATCH_SIZE] for i in range(0, len(articles), BATCH_SIZE)]
 
-    for i, article in enumerate(articles):
+    for b_idx, batch in enumerate(batches):
         try:
-            user_text = SCORE_USER.format(
-                title=article["title"],
-                source=article["source"],
-                summary=article["summary"][:500],
+            articles_text = "\n".join(
+                f'[{i}] "{a["title"]}" | {a["source"]} | {a["summary"][:200]}'
+                for i, a in enumerate(batch)
             )
+            user_text = SCORE_USER_BULK.format(n=len(batch), articles_list=articles_text)
+
             response = client.messages.create(
                 model="claude-haiku-4-5-20251001",
-                max_tokens=200,
+                max_tokens=len(batch) * 80 + 200,
                 system=[{
                     "type": "text",
                     "text": system_text,
@@ -121,29 +129,35 @@ def score_articles(articles: list[dict]) -> list[dict]:
             )
             if getattr(response.usage, "cache_read_input_tokens", 0) > 0:
                 cache_hits += 1
+
             raw = response.content[0].text.strip()
-            # Limpiar markdown si Claude envuelve en ```json ... ```
             if raw.startswith("```"):
                 raw = raw.split("```")[1]
                 if raw.startswith("json"):
                     raw = raw[4:]
                 raw = raw.strip()
-            result = json.loads(raw)
-            article["score"] = result.get("score", 0)
-            article["category"] = result.get("category", "general")
-            article["score_reason"] = result.get("reason", "")
-            scored.append(article)
 
-            if (i + 1) % 10 == 0:
-                print(f"  Scored {i + 1}/{len(articles)}...")
+            results = json.loads(raw)
+            result_map = {item["id"]: item for item in results}
+
+            for i, article in enumerate(batch):
+                r = result_map.get(i, {})
+                article["score"] = r.get("score", 0)
+                article["category"] = r.get("category", "Descartado")
+                article["score_reason"] = r.get("reason", "")
+                scored.append(article)
+
+            print(f"  Lote {b_idx + 1}/{len(batches)}: {len(batch)} artículos")
         except Exception as e:
-            print(f"  Error scoring '{article['title'][:50]}': {e} | raw: '{raw[:80] if 'raw' in dir() else 'no response'}'")
-            article["score"] = 0
-            article["category"] = "Descartado"
-            scored.append(article)
+            print(f"  Error en lote {b_idx + 1}: {e} — marcando como Descartado")
+            for article in batch:
+                article["score"] = 0
+                article["category"] = "Descartado"
+                article["score_reason"] = ""
+                scored.append(article)
 
     if cache_hits > 0:
-        print(f"  [cache] {cache_hits}/{len(articles)} hits — prefix cacheado correctamente")
+        print(f"  [cache] {cache_hits}/{len(batches)} lotes con cache hit")
     return scored
 
 

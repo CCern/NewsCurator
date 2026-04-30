@@ -21,7 +21,8 @@ def fetch_rss_feeds() -> list[dict]:
     for feed_cfg in RSS_FEEDS:
         try:
             feed = feedparser.parse(feed_cfg["url"])
-            for entry in feed.entries[:15]:  # máximo 15 por feed
+            max_entries = feed_cfg.get("max_entries", 15)
+            for entry in feed.entries[:max_entries]:
                 published = _parse_date(entry)
                 if published and published < cutoff:
                     continue

@@ -63,8 +63,8 @@ RSS_FEEDS = [
     {"url": "https://www.theverge.com/rss/index.xml", "name": "The Verge", "category": "AI,Negocios"},
     # Bitcoin
     {"url": "https://bitcoinmagazine.com/feed", "name": "Bitcoin Magazine", "category": "Bitcoin"},
-    {"url": "https://cointelegraph.com/rss/tag/bitcoin", "name": "CoinTelegraph Bitcoin", "category": "Bitcoin"},
-    {"url": "https://decrypt.co/feed", "name": "Decrypt", "category": "Bitcoin"},
+    {"url": "https://cointelegraph.com/rss/tag/bitcoin", "name": "CoinTelegraph Bitcoin", "category": "Bitcoin", "max_entries": 5},
+    {"url": "https://decrypt.co/feed", "name": "Decrypt", "category": "Bitcoin", "max_entries": 5},
     # The Economist (artículos gratuitos via RSS)
     {"url": "https://www.economist.com/finance-and-economics/rss.xml", "name": "The Economist Finance", "category": "Negocios"},
     {"url": "https://www.economist.com/science-and-technology/rss.xml", "name": "The Economist Science", "category": "Ciencia,AI"},
