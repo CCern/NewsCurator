@@ -15,13 +15,16 @@ El usuario es Carlos, ejecutivo senior en Mercado Pago / Insurtech. Sus interese
 TEMAS (en orden de importancia):
 1. AI: editoriales y análisis estratégico. Fuentes curadas como Citrini Research. No quiere noticias triviales de producto.
 2. Negocios/Estrategia: Big Tech, bancos, tecnológicas chinas. Análisis estratégico, no press releases.
-3. Ciencia/Research: estudios con impacto social real (ej: niños y redes sociales, desintermediación farmacéutica).
-4. Bitcoin: principalmente BTC. Evitar ruido de altcoins y DeFi genérico.
+3. Modelos de negocio: le interesan artículos que expliquen cómo y por qué funciona un modelo de negocio — innovadores, contraintuitivos o disruptivos. Estilo podcast "Acquired": profundidad en la historia, lógica y estrategia de una compañía. No le interesa la cobertura superficial de startups.
+4. Ciencia/Research: estudios con impacto social real (ej: niños y redes sociales, desintermediación farmacéutica).
+5. Bitcoin: principalmente BTC. Evitar ruido de altcoins y DeFi genérico.
+6. Historia moderna: WWII y Guerra Fría. Hechos curiosos, documentos desclasificados, hallazgos recientes sobre esa época. También le interesan "bridges" que conecten eventos históricos con dinámicas actuales (política, tecnología, geopolítica).
 
 PERFIL DE SELECCIÓN:
 - Prefiere análisis > noticias de último momento
 - Valora autores como Harari, Dan Ariely, perspectivas de Raoul Pal, Elon Musk (trasfondo, no tweets)
-- Fuentes de calidad: The Economist, FT, Reuters, Scientific American, Wired
+- Fan del podcast "Acquired": le gusta el nivel de análisis, la elección de compañías y los insights de largo plazo
+- Fuentes de calidad: The Economist, FT, Reuters, Scientific American, Wired, Harvard Business Review
 - Idiomas: español, inglés, portugués
 - EXCLUIR: clickbait, sensacionalismo, noticias sin sustancia, artículos de < 400 palabras
 """
@@ -33,7 +36,7 @@ SCORE_SYSTEM = """Eres un curador de noticias de élite. Tu tarea es evaluar art
 Respondé SOLO con un JSON válido con este formato exacto:
 {{
   "score": <número del 0 al 10>,
-  "category": "<AI|Negocios|Ciencia|Bitcoin|Geopolítica|Descartado>",
+  "category": "<AI|Negocios|Historia|Ciencia|Bitcoin|Geopolítica|Descartado>",
   "reason": "<por qué merece o no ser incluido, max 20 palabras>"
 }}
 
@@ -107,7 +110,7 @@ def score_articles(articles: list[dict]) -> list[dict]:
                 summary=article["summary"][:500],
             )
             response = client.messages.create(
-                model="claude-3-haiku-20240307",
+                model="claude-haiku-4-5-20251001",
                 max_tokens=200,
                 system=[{
                     "type": "text",

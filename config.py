@@ -14,9 +14,12 @@ TOPICS = {
     "Negocios": {
         "keywords": ["Big Tech", "Apple", "Google", "Meta", "Microsoft", "Amazon", "Alibaba",
                      "Tencent", "ByteDance", "banking", "fintech", "strategy", "acquisition",
-                     "banks", "tecnológicas chinas", "Chinese tech", "earnings"],
+                     "banks", "tecnológicas chinas", "Chinese tech", "earnings",
+                     "business model", "how X makes money", "company history", "founding story",
+                     "network effect", "marketplace", "disruptive", "Acquired podcast",
+                     "company analysis", "venture capital", "private equity"],
         "priority": 1,
-        "notes": "Preferir análisis estratégico sobre press releases. Big Tech y banca son el foco."
+        "notes": "Preferir análisis estratégico sobre press releases. Big Tech y banca son el foco. También: modelos de negocio innovadores, historia de compañías al estilo podcast Acquired."
     },
     "Ciencia": {
         "keywords": ["research", "study", "science", "scientific", "children social media",
@@ -30,6 +33,15 @@ TOPICS = {
                      "digital currency", "halving", "ETF bitcoin"],
         "priority": 2,
         "notes": "Foco en Bitcoin principalmente. Evitar ruido de altcoins y DeFi genérico."
+    },
+    "Historia": {
+        "keywords": ["World War II", "WWII", "Cold War", "Guerra Fría", "Segunda Guerra Mundial",
+                     "declassified", "espionage", "KGB", "CIA history", "Berlin Wall",
+                     "Cuban Missile Crisis", "Vietnam War", "nuclear arms race", "Iron Curtain",
+                     "1940s", "1950s", "1960s", "Churchill", "Stalin", "Eisenhower",
+                     "Operation", "secret agent", "classified documents", "history reveals"],
+        "priority": 3,
+        "notes": "WWII y Guerra Fría principalmente. Hechos curiosos, documentos desclasificados, conexiones con la actualidad."
     },
 }
 
@@ -61,6 +73,11 @@ RSS_FEEDS = [
     {"url": "https://www.ft.com/?format=rss", "name": "Financial Times", "category": "Negocios"},
     # MIT Technology Review
     {"url": "https://www.technologyreview.com/feed/", "name": "MIT Tech Review", "category": "AI,Ciencia"},
+    # Modelos de negocio / análisis estratégico profundo
+    {"url": "https://feeds.hbr.org/harvardbusiness", "name": "Harvard Business Review", "category": "Negocios"},
+    # Historia moderna
+    {"url": "https://www.smithsonianmag.com/rss/", "name": "Smithsonian Magazine", "category": "Historia,Ciencia"},
+    {"url": "https://www.historynet.com/feed", "name": "HistoryNet", "category": "Historia"},
 ]
 
 # Queries para NewsAPI (complementan los RSS feeds)
@@ -71,6 +88,8 @@ NEWSAPI_QUERIES = [
     {"q": "children social media research OR pharmaceutical disintermediation OR science study", "category": "Ciencia"},
     {"q": "Citrini Research OR Harari OR Dan Ariely", "category": "AI,Negocios"},
     {"q": "Elon Musk OR Raoul Pal analysis OR commentary", "category": "general"},
+    {"q": "business model innovation OR disruptive business model OR company strategy deep dive", "category": "Negocios"},
+    {"q": "WWII history OR Cold War history OR \"World War II\" declassified OR \"Guerra Fría\" historia", "category": "Historia"},
 ]
 
 # Parámetros de selección final

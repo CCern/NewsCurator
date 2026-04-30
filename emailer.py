@@ -12,6 +12,7 @@ CATEGORY_ICONS = {
     "Ciencia": "🔬",
     "Bitcoin": "₿",
     "Geopolítica": "🌍",
+    "Historia": "📜",
     "general": "📰",
 }
 
@@ -21,6 +22,7 @@ CATEGORY_COLORS = {
     "Ciencia": "#10b981",
     "Bitcoin": "#f59e0b",
     "Geopolítica": "#8b5cf6",
+    "Historia": "#b45309",
     "general": "#6b7280",
 }
 
