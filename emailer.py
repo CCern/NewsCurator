@@ -38,7 +38,12 @@ def build_email_html(geopolitics_intro: str, articles: list[dict],
         cat = article.get("category", "general")
         icon = CATEGORY_ICONS.get(cat, "📰")
         color = CATEGORY_COLORS.get(cat, "#6b7280")
-        summary = article.get("executive_summary", article.get("summary", ""))[:800]
+        raw_summary = article.get("executive_summary", article.get("summary", ""))
+        if len(raw_summary) > 800:
+            cutoff_pos = raw_summary.rfind(".", 0, 800)
+            summary = raw_summary[:cutoff_pos + 1] if cutoff_pos != -1 else raw_summary[:800] + "..."
+        else:
+            summary = raw_summary
         url = article.get("url", "#")
         source = article.get("source", "")
         title = article.get("title", "Sin título")

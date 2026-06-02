@@ -14,9 +14,9 @@ HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; NewsCuratorBot/1.0)"}
 
 
 def fetch_rss_feeds() -> list[dict]:
-    """Trae artículos de todos los RSS feeds configurados, publicados en las últimas 48hs."""
+    """Trae artículos de todos los RSS feeds configurados, publicados en las últimas 72hs."""
     articles = []
-    cutoff = datetime.now(timezone.utc) - timedelta(hours=48)
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=72)
 
     for feed_cfg in RSS_FEEDS:
         try:
@@ -53,7 +53,7 @@ def fetch_newsapi() -> list[dict]:
 
     articles = []
     seen_urls = set()
-    from_date = (datetime.now(timezone.utc) - timedelta(hours=48)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    from_date = (datetime.now(timezone.utc) - timedelta(hours=72)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     for query_cfg in NEWSAPI_QUERIES:
         try:
