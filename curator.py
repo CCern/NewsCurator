@@ -161,9 +161,65 @@ def score_articles(articles: list[dict]) -> list[dict]:
     return scored
 
 
+STOPWORDS = {
+    "the", "a", "an", "in", "on", "at", "to", "for", "of", "and", "or",
+    "is", "are", "was", "were", "its", "it", "that", "this", "with", "by",
+    "as", "from", "will", "how", "what", "why", "who", "when", "be", "have",
+    "has", "had", "not", "but", "so", "new", "say", "says", "said", "over",
+    "after", "than", "more", "into", "up", "out", "about", "could", "would",
+}
+
+# Alias de compañías/entidades conocidas para detectar duplicados cross-nombre
+ENTITY_ALIASES = [
+    {"alphabet", "google"},
+    {"meta", "facebook"},
+    {"x", "twitter"},
+    {"jp morgan", "jpmorgan", "chase"},
+]
+
+
+def _title_keywords(title: str) -> set[str]:
+    """Extrae palabras clave significativas de un título."""
+    return {
+        w.lower().strip(".,;:!?\"'$%()") for w in title.split()
+        if w.lower().strip(".,;:!?\"'$%()") not in STOPWORDS
+        and len(w.strip(".,;:!?\"'$%()")) > 2
+    }
+
+
+def _same_entity(kw1: set, kw2: set) -> bool:
+    """Detecta si dos sets de keywords comparten una entidad conocida por alias."""
+    for alias_group in ENTITY_ALIASES:
+        if alias_group & kw1 and alias_group & kw2:
+            return True
+    return False
+
+
+def _are_same_topic(title1: str, title2: str) -> bool:
+    """
+    Detecta si dos títulos cubren el mismo tema.
+    Criterio: 3+ keywords significativas en común, o entidad compartida + número en común.
+    """
+    kw1 = _title_keywords(title1)
+    kw2 = _title_keywords(title2)
+    shared = kw1 & kw2
+
+    # 3+ palabras clave compartidas → mismo tema
+    if len(shared) >= 3:
+        return True
+
+    # Entidad compartida + número/cifra compartida → mismo tema (ej: "Alphabet $80bn")
+    numbers1 = {w for w in kw1 if any(c.isdigit() for c in w)}
+    numbers2 = {w for w in kw2 if any(c.isdigit() for c in w)}
+    if _same_entity(kw1, kw2) and numbers1 & numbers2:
+        return True
+
+    return False
+
+
 def select_top_articles(scored_articles: list[dict]) -> list[dict]:
     """
-    Selecciona los mejores artículos con diversidad de categorías.
+    Selecciona los mejores artículos con diversidad de categorías y sin duplicados temáticos.
     Objetivo: entre 3 y 5 artículos, con al menos 2 categorías distintas.
     """
     min_score = SELECTION["min_relevance_score"]
@@ -177,13 +233,21 @@ def select_top_articles(scored_articles: list[dict]) -> list[dict]:
     # Ordenar por score descendente
     candidates.sort(key=lambda x: x.get("score", 0), reverse=True)
 
-    # Selección con diversidad: máximo 2 artículos por categoría
+    # Selección con diversidad de categoría y sin duplicados temáticos
     selected = []
     category_counts = {}
     for article in candidates:
         cat = article.get("category", "general")
+
+        # Máximo 2 artículos por categoría
         if category_counts.get(cat, 0) >= 2:
             continue
+
+        # Descartar si ya hay un artículo seleccionado sobre el mismo tema
+        if any(_are_same_topic(article["title"], s["title"]) for s in selected):
+            print(f"  [dedup] Descartado por tema repetido: {article['title'][:70]}")
+            continue
+
         selected.append(article)
         category_counts[cat] = category_counts.get(cat, 0) + 1
         if len(selected) >= SELECTION["max_articles"]:
